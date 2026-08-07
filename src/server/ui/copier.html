@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<j:jelly trim="false" xmlns:j="jelly:core" xmlns:g="glide" xmlns:j2="null" xmlns:g2="null">
+  <g:evaluate var="jvar_appcopy_uid" expression="gs.getUserID()" />
+  <!-- gs.getSessionToken() is fenced in a scoped app and the exception aborts
+       the whole page render, leaving a blank 200. Go through gs.getSession(). -->
+  <g:evaluate var="jvar_appcopy_ck" expression="gs.getSession().getSessionToken()" />
+  <g:evaluate var="jvar_appcopy_host" expression="gs.getProperty('instance_name')" />
+
+  <style>
+    <![CDATA[
+    *, *::before, *::after { box-sizing: border-box; }
+    body.appcopy {
+      margin: 0;
+      background: #f4f6f8;
+      color: #16212e;
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .ac-wrap { max-width: 1180px; margin: 0 auto; padding: 24px 20px 64px; }
+    .ac-head { margin-bottom: 20px; }
+    .ac-head h1 { margin: 0 0 4px; font-size: 22px; font-weight: 600; }
+    .ac-head p { margin: 0; color: #5b6b7c; }
+
+    .ac-card {
+      background: #fff;
+      border: 1px solid #dbe1e8;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+    .ac-card > header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #e8edf2;
+      background: #fbfcfd;
+    }
+    .ac-step {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #2e6ef2; color: #fff;
+      font-size: 12px; font-weight: 600;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex: none;
+    }
+    .ac-card > header h2 { margin: 0; font-size: 15px; font-weight: 600; }
+    .ac-card > header .ac-sub { margin-left: auto; color: #6b7b8c; font-size: 12px; }
+    .ac-body { padding: 16px; }
+
+    .ac-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .ac-field { display: flex; flex-direction: column; gap: 4px; min-width: 180px; flex: 1 1 200px; }
+    .ac-field label { font-size: 12px; font-weight: 600; color: #52616f; }
+    select, input[type="text"], input[type="password"] {
+      font: inherit; padding: 7px 9px;
+      border: 1px solid #c6ced8; border-radius: 5px; background: #fff; color: inherit;
+      width: 100%; min-width: 0;
+    }
+    select:disabled, input:disabled { background: #f1f3f5; color: #8a95a1; }
+    select:focus, input:focus { outline: 2px solid #9dbcfb; outline-offset: -1px; border-color: #2e6ef2; }
+
+    button {
+      font: inherit; font-weight: 600;
+      padding: 8px 14px; border-radius: 5px; border: 1px solid transparent;
+      background: #2e6ef2; color: #fff; cursor: pointer; white-space: nowrap;
+    }
+    button:hover:not(:disabled) { background: #245ed6; }
+    button:disabled { background: #b9c4d1; cursor: not-allowed; }
+    button.ac-ghost { background: #fff; color: #2e6ef2; border-color: #c3d3f6; }
+    button.ac-ghost:hover:not(:disabled) { background: #eef3fe; }
+    button.ac-small { padding: 4px 9px; font-size: 12px; font-weight: 500; }
+
+    .ac-stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .ac-stat {
+      flex: 1 1 130px; padding: 10px 12px;
+      background: #f7f9fb; border: 1px solid #e6ebf0; border-radius: 6px;
+    }
+    .ac-stat b { display: block; font-size: 19px; font-weight: 600; }
+    .ac-stat span { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #6b7b8c; }
+    .ac-stat.ac-keep b { color: #147d4a; }
+    .ac-stat.ac-drop b { color: #a4560f; }
+
+    .ac-exclude { margin-top: 16px; padding-top: 14px; border-top: 1px solid #eef1f4; }
+    .ac-exclude h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
+    .ac-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .ac-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 6px 3px 10px; border-radius: 12px;
+      background: #fdf0e3; border: 1px solid #f0d3b0; color: #8a4c0c; font-size: 12px;
+    }
+    .ac-chip button {
+      background: none; border: none; color: #a4560f; cursor: pointer;
+      font-size: 15px; line-height: 1; padding: 0 2px; font-weight: 700;
+    }
+    .ac-chip button:hover { color: #6b3405; background: none; }
+    .ac-muted { color: #8a95a1; font-size: 12px; }
+
+    .ac-tree {
+      margin-top: 14px; max-height: 380px; overflow: auto;
+      border: 1px solid #e6ebf0; border-radius: 6px; background: #fcfdfe;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px;
+    }
+    .ac-node { display: flex; align-items: center; gap: 6px; padding: 2px 10px; white-space: nowrap; }
+    .ac-node:hover { background: #f0f4f9; }
+    .ac-node .ac-twist {
+      width: 14px; text-align: center; color: #7b8794; cursor: pointer; user-select: none; flex: none;
+    }
+    .ac-node .ac-name { overflow: hidden; text-overflow: ellipsis; }
+    .ac-node .ac-size { margin-left: auto; color: #98a3af; font-size: 11px; padding-left: 12px; }
+    .ac-node.ac-dir .ac-name { font-weight: 600; }
+    .ac-node.ac-excluded { opacity: .45; }
+    .ac-node.ac-excluded .ac-name { text-decoration: line-through; }
+    .ac-node input[type="checkbox"] { margin: 0; flex: none; cursor: pointer; }
+
+    .ac-note {
+      padding: 9px 12px; border-radius: 5px; font-size: 13px; margin-top: 12px;
+      border: 1px solid transparent; word-break: break-word;
+    }
+    .ac-note.ac-ok { background: #e9f7ef; border-color: #b6e2c8; color: #14653c; }
+    .ac-note.ac-err { background: #fdecea; border-color: #f3c0bb; color: #9b241a; }
+    .ac-note.ac-info { background: #eef3fe; border-color: #c8d9fb; color: #23478f; }
+    .ac-hide { display: none !important; }
+
+    .ac-bar { height: 8px; border-radius: 4px; background: #e6ebf0; overflow: hidden; margin: 12px 0 6px; }
+    .ac-bar > div { height: 100%; width: 0; background: #2e6ef2; transition: width .15s linear; }
+    .ac-log {
+      max-height: 220px; overflow: auto; margin-top: 10px; padding: 8px 10px;
+      background: #16212e; color: #d7e0ea; border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px;
+    }
+    .ac-log div { white-space: pre-wrap; word-break: break-word; }
+    .ac-log .ac-l-err { color: #ff9d92; }
+    .ac-log .ac-l-ok { color: #8fe3b0; }
+    .ac-radio { display: flex; gap: 16px; margin-bottom: 12px; }
+    .ac-radio label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+
+    .ac-mirror {
+      flex: 2 1 320px; display: flex; align-items: flex-start; gap: 8px;
+      padding: 9px 12px; border-radius: 5px; font-size: 13px; cursor: pointer;
+      background: #fdf6f5; border: 1px solid #f0cdc8; color: #7c2d22;
+    }
+    .ac-mirror input { margin: 2px 0 0; flex: none; cursor: pointer; }
+    .ac-mirror .ac-muted { display: block; margin-top: 2px; }
+    ]]>
+  </style>
+
+  <div class="ac-wrap">
+    <div class="ac-head">
+      <h1>App Copier</h1>
+      <p>Browse a Now SDK application on this instance and copy its files to another instance.</p>
+    </div>
+
+    <div class="ac-card">
+      <header>
+        <span class="ac-step">1</span>
+        <h2>Source application</h2>
+        <span class="ac-sub" id="ac-src-host"></span>
+      </header>
+      <div class="ac-body">
+        <div class="ac-row">
+          <div class="ac-field">
+            <label for="ac-src-ws">Workspace</label>
+            <select id="ac-src-ws"><option value="">Loading…</option></select>
+          </div>
+          <div class="ac-field">
+            <label for="ac-src-app">Application</label>
+            <select id="ac-src-app" disabled="disabled"><option value="">Select a workspace first</option></select>
+          </div>
+          <button type="button" class="ac-ghost" id="ac-src-reload">Reload</button>
+        </div>
+
+        <div id="ac-src-note" class="ac-note ac-hide"></div>
+
+        <div id="ac-src-detail" class="ac-hide">
+          <div class="ac-stats" id="ac-src-stats"></div>
+
+          <div class="ac-exclude">
+            <h3>Excluded from the copy</h3>
+            <div class="ac-chips" id="ac-src-chips"></div>
+            <div class="ac-row">
+              <div class="ac-field">
+                <input type="text" id="ac-src-exclude-input" placeholder="Folder or file path relative to the app root, e.g. target" />
+              </div>
+              <button type="button" class="ac-ghost ac-small" id="ac-src-exclude-add">Add</button>
+              <button type="button" class="ac-ghost ac-small" id="ac-src-exclude-reset">Reset to defaults</button>
+            </div>
+            <p class="ac-muted">Untick a folder in the tree to exclude it. A path excludes itself and everything under it.</p>
+          </div>
+
+          <div class="ac-tree" id="ac-src-tree"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ac-card">
+      <header>
+        <span class="ac-step">2</span>
+        <h2>Target instance</h2>
+      </header>
+      <div class="ac-body">
+        <div class="ac-row">
+          <div class="ac-field" style="flex: 2 1 260px;">
+            <label for="ac-tgt-url">Instance URL</label>
+            <input type="text" id="ac-tgt-url" placeholder="https://example.service-now.com" autocomplete="off" />
+          </div>
+          <div class="ac-field">
+            <label for="ac-tgt-user">Username</label>
+            <input type="text" id="ac-tgt-user" autocomplete="off" />
+          </div>
+          <div class="ac-field">
+            <label for="ac-tgt-pass">Password</label>
+            <input type="password" id="ac-tgt-pass" autocomplete="new-password" />
+          </div>
+          <button type="button" id="ac-tgt-connect">Authenticate</button>
+        </div>
+
+        <div id="ac-tgt-note" class="ac-note ac-hide"></div>
+
+        <div id="ac-tgt-detail" class="ac-hide">
+          <div class="ac-row" style="margin-top: 14px;">
+            <div class="ac-field">
+              <label for="ac-tgt-ws">Target workspace</label>
+              <select id="ac-tgt-ws"><option value="">Select…</option></select>
+            </div>
+          </div>
+
+          <div id="ac-tgt-dest" class="ac-hide" style="margin-top: 14px;">
+            <div class="ac-radio">
+              <label><input type="radio" name="ac-dest-mode" value="existing" checked="checked" /> Copy into an existing app</label>
+              <label><input type="radio" name="ac-dest-mode" value="new" /> Create a new app</label>
+            </div>
+            <div class="ac-row" id="ac-dest-existing">
+              <div class="ac-field">
+                <label for="ac-tgt-app">Destination application</label>
+                <select id="ac-tgt-app"><option value="">Select…</option></select>
+              </div>
+              <label class="ac-mirror">
+                <input type="checkbox" id="ac-mirror" />
+                <span>
+                  <b>Mirror</b> — also delete target files that do not exist in the source app.
+                  <span class="ac-muted">Without this, a copy only adds and overwrites; files already on the target are never removed.</span>
+                </span>
+              </label>
+            </div>
+            <div class="ac-row ac-hide" id="ac-dest-new">
+              <div class="ac-field">
+                <label for="ac-new-name">New app name</label>
+                <input type="text" id="ac-new-name" placeholder="My Copied App" />
+              </div>
+              <div class="ac-field">
+                <label for="ac-new-scope">Scope</label>
+                <input type="text" id="ac-new-scope" placeholder="x_snc_my_app" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ac-card">
+      <header>
+        <span class="ac-step">3</span>
+        <h2>Copy</h2>
+      </header>
+      <div class="ac-body">
+        <div id="ac-copy-summary" class="ac-note ac-info">Pick a source application and a target destination.</div>
+        <div class="ac-row" style="margin-top: 12px;">
+          <button type="button" id="ac-copy-run" disabled="disabled">Copy files</button>
+        </div>
+        <div class="ac-bar ac-hide" id="ac-copy-bar"><div></div></div>
+        <div class="ac-log ac-hide" id="ac-copy-log"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.APPCOPY_CTX = {
+      userId: "${jvar_appcopy_uid}",
+      token: "${jvar_appcopy_ck}",
+      host: "${jvar_appcopy_host}"
+    };
+  </script>
+</j:jelly>
