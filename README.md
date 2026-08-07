@@ -1,6 +1,6 @@
 # App Copier
 
-**[Download App Copier (app-copier-1.0.0.xml.zip)](./app-copier-1.0.0.xml.zip)**
+**[Download App Copier (app-copier-1.0.0.xml.zip)](https://raw.githubusercontent.com/arizzi74/App-Copier/main/app-copier-1.0.0.xml.zip)**
 
 ## What it does
 
